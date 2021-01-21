@@ -1,0 +1,74 @@
+- hosts: web_server
+  tasks:
+         - file:
+                 state: directory
+                 path: /dvd1
+          
+         - mount:
+                 src: /dev/cdrom
+                 path: "/dvd1"
+                 state: mounted
+                 fstype: "iso9660"
+
+         - yum_repository:
+                 baseurl: "/dvd1/AppStream"
+                 name: "mydvd"
+                 description: "my yum repository"
+                 gpgcheck: no
+
+         - yum_repository:
+                 baseurl: "/dvd1/BaseOS"
+                 name: "mydvd1"
+                 description: "blah blah"
+                 gpgcheck: no
+
+         - package:
+                 name: "httpd"
+                 state: present
+         - package:
+                 name: "php"
+                 state: present
+         - package:
+                 name: "net-tools"
+                 state: present
+
+         - file:
+                 state: directory
+                 path: /var/www/arjun
+
+         - template:
+                 src: "arjun_web.conf"
+                 dest: "/etc/httpd/conf.d/"
+
+         - copy:
+                 src: "../index.php"
+                 dest: "/var/www/arjun/"
+
+         - service:
+                 name: "httpd"
+                 state: restarted
+         
+         - firewalld:
+                 port: "80/tcp"
+                 state: enabled
+                 permanent: yes
+                 immediate: yes
+         - firewalld:
+                 port: "8080/tcp"
+                 state: enabled
+                 permanent: yes
+                 immediate: yes
+
+- hosts: load_balancer
+  tasks :
+          - package:
+                  name: "haproxy"
+                  state: present
+
+          - template:
+                  src: "haproxy.cfg"
+                  dest: "/etc/haproxy/"
+
+          - service:
+                  name: "haproxy"
+                  state: restarted
